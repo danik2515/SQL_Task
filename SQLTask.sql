@@ -126,37 +126,40 @@ VALUES
 DECLARE @CityName NVARCHAR(32) = 'Minsk'
 
 SELECT DISTINCT BankName
-FROM BranchOffice INNER JOIN Bank 
-ON BranchOffice.BankId=Bank.Id INNER JOIN City 
-ON City.Id=BranchOffice.CityId
+FROM BranchOffice 
+	INNER JOIN Bank ON BranchOffice.BankId=Bank.Id 
+	INNER JOIN City ON City.Id=BranchOffice.CityId
 WHERE City.CityName=@CityName
 --2
 SELECT Person.FirstName,Cards.Balance,Bank.BankName,Cards.CardName
-FROM Person INNER JOIN Account
-ON Person.Id=Account.Id INNER JOIN Cards
-ON Cards.AccountId=Account.Id INNER JOIN Bank
-ON Bank.Id=Account.BankId
+FROM Person 
+	INNER JOIN Account ON Person.Id=Account.Id
+	INNER JOIN Cards ON Cards.AccountId=Account.Id
+	INNER JOIN Bank ON Bank.Id=Account.BankId
 --3
 SELECT Account.AccountName,Account.Balance-SUM(Cards.Balance) AS 'Difference'
-FROM Cards INNER JOIN Account
-ON Cards.AccountId=Account.Id
+FROM Cards 
+	INNER JOIN Account ON Cards.AccountId=Account.Id
 GROUP BY Account.AccountName,Account.Balance
 HAVING Account.Balance-SUM(Cards.Balance)!=0
 --4
 
 --GROUP BY
 SELECT SocialStatus.SocialStatusName,COUNT(Person.SocialStatusId) AS 'Number of cards'
-FROM Account INNER JOIN Person
-ON Account.PersonId=Person.Id INNER JOIN Cards
-ON Cards.AccountId=Account.Id RIGHT JOIN SocialStatus
-ON SocialStatus.Id=Person.SocialStatusId
+FROM Account 
+	INNER JOIN Person ON Account.PersonId=Person.Id
+	INNER JOIN Cards ON Cards.AccountId=Account.Id
+	RIGHT JOIN SocialStatus ON SocialStatus.Id=Person.SocialStatusId
 GROUP BY SocialStatus.SocialStatusName
 
 
 --Subquery
 SELECT SocialStatus.SocialStatusName,
-(SELECT COUNT(*) FROM Person,Account,Cards 
-WHERE Person.SocialStatusId = SocialStatus.Id AND Cards.AccountId=Account.Id AND Account.PersonId=Person.Id) AS 'Number of cards'
+(SELECT COUNT(*)
+FROM Person,Account,Cards 
+WHERE Person.SocialStatusId = SocialStatus.Id 
+	AND Cards.AccountId=Account.Id 
+	AND Account.PersonId=Person.Id) AS 'Number of cards'
 FROM SocialStatus
 
 
@@ -165,16 +168,23 @@ GO
 CREATE PROCEDURE Add10$
     @SocialStatusId INT
 AS
-IF EXISTS (SELECT * FROM Account,Person WHERE Account.PersonId=Person.Id AND Person.SocialStatusId=@SocialStatusId)
+IF EXISTS 
+(SELECT * 
+FROM Account,Person 
+WHERE Account.PersonId=Person.Id 
+	AND Person.SocialStatusId=@SocialStatusId)
 BEGIN
 	UPDATE Account
 	SET Balance=Balance+10
 	FROM Account,Person
-	WHERE Account.PersonId=Person.Id AND @SocialStatusId=Person.SocialStatusId
+	WHERE Account.PersonId=Person.Id 
+		AND @SocialStatusId=Person.SocialStatusId
 END
 ELSE
 BEGIN
-	IF EXISTS (SELECT * FROM SocialStatus WHERE SocialStatus.Id=@SocialStatusId)
+	IF EXISTS (SELECT * 
+	FROM SocialStatus 
+	WHERE SocialStatus.Id=@SocialStatusId)
 	BEGIN
 		PRINT 'Social status Id'+CONVERT(NVARCHAR,@SocialStatusId)+' not use'
 	END
@@ -190,19 +200,23 @@ DECLARE @SocialStatusId INT = 1
 
 SELECT Person.FirstName,SocialStatus.SocialStatusName,Account.Balance
 FROM Account,Person,SocialStatus
-WHERE Person.SocialStatusId = SocialStatus.Id AND Account.PersonId=Person.Id AND @SocialStatusId=SocialStatus.Id
+WHERE Person.SocialStatusId = SocialStatus.Id 
+	AND Account.PersonId=Person.Id 
+	AND @SocialStatusId=SocialStatus.Id
 
 EXEC Add10$ @SocialStatusId
 
 SELECT Person.FirstName,SocialStatus.SocialStatusName,Account.Balance
 FROM Account,Person,SocialStatus
-WHERE Person.SocialStatusId = SocialStatus.Id AND Account.PersonId=Person.Id AND @SocialStatusId=SocialStatus.Id
+WHERE Person.SocialStatusId = SocialStatus.Id 
+	AND Account.PersonId=Person.Id 
+	AND @SocialStatusId=SocialStatus.Id
 
 --6
 SELECT Person.FirstName,Account.Balance-SUM(Cards.Balance) AS 'Available money'
-FROM Cards INNER JOIN Account
-ON Cards.AccountId=Account.Id INNER JOIN Person
-ON Person.Id=Account.PersonId
+FROM Cards 
+	INNER JOIN Account ON Cards.AccountId=Account.Id 
+	INNER JOIN Person ON Person.Id=Account.PersonId
 GROUP BY Account.AccountName,Person.FirstName,Account.Balance
 --7
 GO
@@ -215,10 +229,12 @@ BEGIN TRANSACTION
 	UPDATE Cards
 	SET Balance=Cards.Balance+@Money
 	FROM Account,Cards
-	WHERE Account.Id=Cards.AccountId AND Account.Id=@AccountId AND Cards.Id=@CardId
+	WHERE Account.Id=Cards.AccountId 
+		AND Account.Id=@AccountId 
+		AND Cards.Id=@CardId
 	IF 0 > (SELECT Account.Balance-SUM(Cards.Balance)
-	FROM Cards INNER JOIN Account
-	ON Cards.AccountId=Account.Id
+	FROM Cards
+		INNER JOIN Account ON Cards.AccountId=Account.Id
 	WHERE Account.Id=@AccountId
 	GROUP BY Account.AccountName,Account.Balance)
 	BEGIN
@@ -235,28 +251,28 @@ DECLARE @Money MONEY = 15
 
 
 SELECT Person.FirstName,Cards.Balance AS 'Card balance',CardName,Account.Balance AS 'Account Balance'
-FROM Person INNER JOIN Account
-ON Person.Id=Account.Id INNER JOIN Cards
-ON Cards.AccountId=Account.Id INNER JOIN Bank
-ON Bank.Id=Account.BankId
+FROM Person 
+	INNER JOIN Account ON Person.Id=Account.Id 
+	INNER JOIN Cards ON Cards.AccountId=Account.Id 
+	INNER JOIN Bank ON Bank.Id=Account.BankId
 WHERE Account.Id=@AccountId
 
 EXEC AddMoneyCard @AccountId,@CardId,@Money
 
 SELECT Person.FirstName,Cards.Balance AS 'Card balance',CardName,Account.Balance AS 'Account Balance'
-FROM Person INNER JOIN Account
-ON Person.Id=Account.Id INNER JOIN Cards
-ON Cards.AccountId=Account.Id INNER JOIN Bank
-ON Bank.Id=Account.BankId
+FROM Person 
+	INNER JOIN Account ON Person.Id=Account.Id 
+	INNER JOIN Cards ON Cards.AccountId=Account.Id 
+	INNER JOIN Bank ON Bank.Id=Account.BankId
 WHERE Account.Id=@AccountId
 
 EXEC AddMoneyCard @AccountId,@CardId,@Money
 
 SELECT Person.FirstName,Cards.Balance AS 'Card balance',CardName,Account.Balance AS 'Account Balance'
-FROM Person INNER JOIN Account
-ON Person.Id=Account.Id INNER JOIN Cards
-ON Cards.AccountId=Account.Id INNER JOIN Bank
-ON Bank.Id=Account.BankId
+FROM Person 
+	INNER JOIN Account ON Person.Id=Account.Id 
+	INNER JOIN Cards ON Cards.AccountId=Account.Id 
+	INNER JOIN Bank ON Bank.Id=Account.BankId
 WHERE Account.Id=@AccountId
 
 --8
@@ -267,8 +283,8 @@ AFTER UPDATE
 AS IF UPDATE (Balance)
 BEGIN
 	IF 0 > (SELECT Account.Balance-SUM(Cards.Balance)
-		FROM Cards INNER JOIN Account
-		ON Cards.AccountId=Account.Id
+		FROM Cards 
+			INNER JOIN Account ON Cards.AccountId=Account.Id
 		WHERE Account.Id=(SELECT Id 
 			FROM deleted)
 		GROUP BY Account.AccountName,Account.Balance
@@ -286,8 +302,8 @@ AFTER UPDATE
 AS IF UPDATE (Balance)
 BEGIN
 	IF 0 > (SELECT Account.Balance-SUM(Cards.Balance)
-		FROM Cards INNER JOIN Account
-		ON Cards.AccountId=Account.Id
+		FROM Cards 
+			INNER JOIN Account ON Cards.AccountId=Account.Id
 		WHERE Account.Id=(SELECT AccountId 
 			FROM deleted)
 		GROUP BY Account.AccountName,Account.Balance
